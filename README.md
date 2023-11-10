@@ -7,9 +7,10 @@ This repository contains a Bash script designed for running various benchmarks a
 The script automates the following tasks:
 
 - Running the Code Profiler Pro.
-- Executing WP CLI Profile stage.
-- Performing WP CLI Doctor checks.
-- Additional WP CLI Doctor check for cron-count.
+- Executing various WP CLI Profile commands, including stage, stage bootstrap, hook init, and hook wp_loaded:after.
+- Performing WP CLI Doctor checks, including general checks and cron-count.
+- Running a custom WP DB query to analyze autoloaded data in WordPress options.
+- Outputs are organized in a directory for easy access and review.
 
 ## Installation
 
@@ -22,7 +23,7 @@ To use this script:
 
 ## Usage
 
-Execute the script within the root directory of your WordPress installation. The script will automatically install necessary WP CLI packages if they are not already installed.
+Execute the script within the root directory of your WordPress installation. The script will automatically install necessary WP CLI packages if they are not already installed and create a directory named `wp-benchmarks` where all output files will be saved.
 
 ```bash
 chmod +x wp-benchmark.sh

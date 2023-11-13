@@ -1,5 +1,23 @@
 #!/bin/bash
 
+# Welcome message with manual ASCII box
+echo "========================================"
+echo "|                                      |"
+echo "| Welcome to the automated WordPress   |"
+echo "| benchmarking assistant. First, we    |"
+echo "| will set the URL to profile against, |"
+echo "| for tests that can check against a   |"
+echo "| specific URL.                        |"
+echo "|                                      |"
+echo "| Script By: Danny Albeck              |"
+echo "| dalbeck@albeckconsulting.com         |"
+echo "|                                      |"
+echo "| V1.1                                 |"
+echo "========================================"
+
+# Prompt for the profiling URL
+read -p "What URL do you want to profile? " PROFILING_URL
+
 # Introductory line
 echo "====== Profiling Scripts Starting Now ======"
 
@@ -8,7 +26,7 @@ OUTPUT_DIR="wp-benchmarks"
 
 # Define the URL of the Code Profiler Pro plugin zip file
 PLUGIN_URL="https://code-profiler.com/pro/?action=d&l=335ED-56FA7-941EC-65BDD-4E61B-95ECB"
-CODE_PROFILER_PROLICENSE_KEY="335ED-56FA7-941EC-65BDD-4E61B-95ECB"
+CODE_PROFILER_PRO_LICENSE_KEY="335ED-56FA7-941EC-65BDD-4E61B-95ECB"
 
 # Trap to catch unexpected exits
 trap 'echo "Script exited unexpectedly. Last command at line $LINENO failed."' EXIT
@@ -37,6 +55,7 @@ install_wp_cli_package() {
         $PACKAGE_INSTALL_COMMAND
     else
         echo "> $PACKAGE_NAME is already installed."
+        echo "================================================"
     fi
 }
 
@@ -72,83 +91,83 @@ install_wp_cli_package "wp-cli/doctor-command" "wp package install wp-cli/doctor
 # Run Code Profiler Pro and output to TXT in the wp-benchmarks directory
 {
     echo "Running Code Profiler Pro..."
-    wp code-profiler-pro run
+    wp code-profiler-pro run --dest="$PROFILING_URL"
 } > "$OUTPUT_DIR/code-profiler-pro-results.txt"
-echo "> Code Profiler Pro completed."
+echo "[1] Code Profiler Pro completed."
 
 # Run WP CLI Profile and output to CSV in the wp-benchmarks directory
 {
     echo "Running WP CLI Profile..."
     wp profile stage --all --orderby=time --allow-root
 } > "$OUTPUT_DIR/profile-stage-results.csv"
-echo "> WP CLI Profile stage completed."
+echo "[2] WP CLI Profile stage completed."
 
 # Additional WP CLI Profile commands with output to CSV in the wp-benchmarks directory
 {
     echo "Running WP CLI Profile stage bootstrap..."
-    wp profile stage bootstrap --fields=hook,time,cache_ratio --spotlight --orderby=time --allow-root
+    wp profile stage bootstrap --fields=hook,time,cache_ratio --spotlight --orderby=time --allow-root --url="$PROFILING_URL"
 } > "$OUTPUT_DIR/profile-stage-bootstrap-results.csv"
-echo "> WP CLI Profile stage bootstrap completed."
+echo "[3] WP CLI Profile stage bootstrap completed."
 
 {
     echo "Running WP CLI Profile hook init..."
-    wp profile hook init --orderby=query_time --allow-root
+    wp profile hook init --orderby=query_time --allow-root --url="$PROFILING_URL"
 } > "$OUTPUT_DIR/profile-hook-init-results.csv"
-echo "> WP CLI Profile hook init completed."
+echo "[4] WP CLI Profile hook init completed."
 
 {
     echo "Running WP CLI Profile hook wp_loaded:after..."
-    wp profile hook wp_loaded:after --orderby=query_time --allow-root
+    wp profile hook wp_loaded:after --orderby=query_time --allow-root --url="$PROFILING_URL"
 } > "$OUTPUT_DIR/profile-hook-wp-loaded-after-results.csv"
-echo "> WP CLI Profile hook wp_loaded:after completed."
+echo "[5] WP CLI Profile hook wp_loaded:after completed."
 
 # Run WP CLI Doctor Check cron-count and output to CSV in the wp-benchmarks directory
 {
     echo "Running WP CLI Doctor Check cron-count..."
     wp doctor check cron-count --allow-root
 } > "$OUTPUT_DIR/doctor-check-cron-count-results.csv"
-echo "> WP CLI Doctor Check cron-count completed."
+echo "[6] WP CLI Doctor Check cron-count completed."
 
 # Run WP CLI Doctor Check cron-duplicates and output to CSV in the wp-benchmarks directory
 {
     echo "Running WP CLI Doctor Check cron-duplicates..."
     wp doctor check cron-duplicates --allow-root
 } > "$OUTPUT_DIR/doctor-check-cron-duplicates-results.csv"
-echo "> WP CLI Doctor Check cron-duplicates completed."
+echo "[7] WP CLI Doctor Check cron-duplicates completed."
 
 # Run WP CLI Doctor Check running crons and output to CSV in the wp-benchmarks directory
 {
     echo "Running WP CLI Doctor Check running crons..."
     wp cron event list --allow-root
 } > "$OUTPUT_DIR/doctor-check-cron-active-results.csv"
-echo "> WP CLI Doctor Check cron-active completed."
+echo "[8] WP CLI Doctor Check cron-active completed."
 
 # Run WP CLI Doctor Check active plugin count and output to CSV in the wp-benchmarks directory
 {
     echo "Running WP CLI Doctor Check active plugins..."
     wp doctor check plugin-active-count --allow-root
 } > "$OUTPUT_DIR/doctor-check-active-plugins-results.csv"
-echo "> WP CLI Doctor Check active plugins count completed."
+echo "[9] WP CLI Doctor Check active plugins count completed."
 
 # Run WP CLI Doctor Check autoload-options-size and output to CSV in the wp-benchmarks directory
 {
     echo "Running WP CLI Doctor Check autoload-options-size..."
     wp doctor check autoload-options-size --allow-root
 } > "$OUTPUT_DIR/doctor-check-autoload-options-size-results.csv"
-echo "> WP CLI Doctor Check autoload-options-size completed."
+echo "[10] WP CLI Doctor Check autoload-options-size completed."
 
 # Run WP DB query and output largest autoloaded rows to CSV in the wp-benchmarks directory
 {
     echo "Running WP DB Query for Largest Autoloaded Data Rows..."
     wp db query "SELECT 'autoloaded data in KiB' as name, ROUND(SUM(LENGTH(option_value))/ 1024) as value FROM $(wp db prefix --allow-root)options WHERE autoload='yes' UNION SELECT 'autoloaded data count', count(*) FROM $(wp db prefix --allow-root)options WHERE autoload='yes' UNION (SELECT option_name, length(option_value) FROM $(wp db prefix --allow-root)options WHERE autoload='yes' ORDER BY length(option_value) DESC LIMIT 10)"
 } > "$OUTPUT_DIR/db-query-autoloaded-data-results.csv"
-echo "> WP DB Query for Largest Autoloaded Data Rows completed."
+echo "[11] WP DB Query for Largest Autoloaded Data Rows completed."
 
 # Run WP CLI Doctor Check --all and output to CSV in the wp-benchmarks directory
 echo "Running WP CLI Doctor Check Warning and Errors."
 timeout 180 wp doctor check --all --spotlight --allow-root > "$OUTPUT_DIR/doctor-check-all-results.csv"
 if [ $? -eq 0 ]; then
-    echo "> WP CLI Doctor Check --all completed."
+    echo "[12] WP CLI Doctor Check --all completed."
 else
     echo "WP CLI Doctor Check --all command failed or timed out."
     exit 1

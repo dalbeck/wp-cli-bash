@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Welcome message with manual ASCII box
 echo "========================================"
 echo "|                                      |"
 echo "| Welcome to the automated WordPress   |"
@@ -18,11 +17,30 @@ echo "========================================"
 # Prompt for the profiling URL
 read -p "What URL do you want to profile? " PROFILING_URL
 
+# Prompt for test label/description
+read -p "Enter a label or description for this test set (e.g., Page Name, New code added, etc.): " TEST_LABEL
+
 # Introductory line
-echo "====== Profiling Scripts Starting Now ======"
+echo "=============================== Notice =================================="
+echo "|     Larger scripts could take longer, or exhaust timeouts/memory.      |"
+echo "|     --      Profiling Scripts Starting Now       --                    |"
+echo "=============================== End Notice ============================="
+
+# Generate a timestamp for the current run
+CURRENT_TIMESTAMP=$(date +"%Y-%m-%d-%H%M")
 
 # Define output directory
 OUTPUT_DIR="wp-benchmarks"
+
+# Replacing spaces in TEST_LABEL with underscores for directory naming
+SAFE_TEST_LABEL=$(echo "$TEST_LABEL" | tr ' ' '_')
+# Define the subdirectory using the timestamp
+RUN_DIR="$OUTPUT_DIR/$CURRENT_TIMESTAMP-$SAFE_TEST_LABEL"
+
+# Create the directory if it does not exist
+if [ ! -d "$RUN_DIR" ]; then
+    mkdir -p "$RUN_DIR"
+fi
 
 # Define the URL of the Code Profiler Pro plugin zip file
 PLUGIN_URL="https://code-profiler.com/pro/?action=d&l=335ED-56FA7-941EC-65BDD-4E61B-95ECB"
@@ -31,13 +49,8 @@ CODE_PROFILER_PRO_LICENSE_KEY="335ED-56FA7-941EC-65BDD-4E61B-95ECB"
 # Trap to catch unexpected exits
 trap 'echo "Script exited unexpectedly. Last command at line $LINENO failed."' EXIT
 
-# Create the directory if it does not exist
-if [ ! -d "$OUTPUT_DIR" ]; then
-    mkdir "$OUTPUT_DIR"
-fi
-
 # Redirect standard error to a file
-exec 2> "$OUTPUT_DIR/error.txt"
+exec 2> "$RUN_DIR/error.txt"
 
 # Check if WP CLI is installed
 if ! command -v wp &> /dev/null
@@ -90,84 +103,148 @@ install_wp_cli_package "wp-cli/doctor-command" "wp package install wp-cli/doctor
 
 # Run Code Profiler Pro and output to TXT in the wp-benchmarks directory
 {
-    echo "Running Code Profiler Pro..."
+    echo "Test: wp code-profiler-pro run"
     wp code-profiler-pro run --dest="$PROFILING_URL"
-} > "$OUTPUT_DIR/code-profiler-pro-results.txt"
+} > "$RUN_DIR/01-code-profiler-pro-results.txt"
 echo "[1] Code Profiler Pro completed."
 
 # Run WP CLI Profile and output to CSV in the wp-benchmarks directory
 {
-    echo "Running WP CLI Profile..."
-    wp profile stage --all --orderby=time --allow-root
-} > "$OUTPUT_DIR/profile-stage-results.csv"
+    echo "Test: wp profile stage"
+    wp profile stage --all --orderby=time --allow-root --format=csv --url="$PROFILING_URL"
+} > "$RUN_DIR/02-profile-stage-results.csv"
+
+# Append a comment with the date and a custom message to the CSV file
+{
+    echo "Test Name: $TEST_LABEL"
+    echo "Notes:"
+    echo "This data was captured on $(date)"
+    echo "Profiled URL: $PROFILING_URL"
+    echo "Your main focus should generally be on the time column. You want your cache_ratio to be high for example, greater than 70%. Generally, you want cache_hits to be greater than cache_misses and, query_time should be low."
+} >> "$RUN_DIR/02-profile-stage-results.csv"
+
 echo "[2] WP CLI Profile stage completed."
 
 # Additional WP CLI Profile commands with output to CSV in the wp-benchmarks directory
 {
-    echo "Running WP CLI Profile stage bootstrap..."
-    wp profile stage bootstrap --fields=hook,time,cache_ratio --spotlight --orderby=time --allow-root --url="$PROFILING_URL"
-} > "$OUTPUT_DIR/profile-stage-bootstrap-results.csv"
+    echo "Test: wp profile stage bootstrap"
+    wp profile stage bootstrap --fields=hook,time,cache_ratio --spotlight --orderby=time --allow-root --format=csv --url="$PROFILING_URL"
+} > "$RUN_DIR/03-profile-stage-bootstrap-results.csv"
+
+# Append a comment with the date and a custom message to the CSV file
+{
+    echo "Test Name: $TEST_LABEL"
+    echo "Notes:"
+    echo "This data was captured on $(date)"
+    echo "Profiled URL: $PROFILING_URL"
+    echo "bootstrap is where WordPress is setting itself up, loading plugins and the main theme, and firing the init hook. You can dive into hooks for each stage with wp profile stage <stage>"
+} >> "$RUN_DIR/03-profile-stage-bootstrap-results.csv"
+
 echo "[3] WP CLI Profile stage bootstrap completed."
 
+# Additional WP CLI Profile commands with output to CSV in the wp-benchmarks directory
 {
-    echo "Running WP CLI Profile hook init..."
-    wp profile hook init --orderby=query_time --allow-root --url="$PROFILING_URL"
-} > "$OUTPUT_DIR/profile-hook-init-results.csv"
-echo "[4] WP CLI Profile hook init completed."
+    echo "Test: wp profile stage main_query"
+    wp profile stage main_query --fields=hook,time,cache_ratio --spotlight --orderby=time --allow-root --format=csv --url="$PROFILING_URL"
+} > "$RUN_DIR/04-profile-main_query-results.csv"
+
+# Append a comment with the date and a custom message to the CSV file
+{
+    echo "Test Name: $TEST_LABEL"
+    echo "Notes:"
+    echo "This data was captured on $(date)"
+    echo "Profiled URL: $PROFILING_URL"
+    echo "main_query is how WordPress transforms the request (e.g. /about/) into the primary WP_Query. You can dive into hooks for each stage with wp profile stage <stage>"
+} >> "$RUN_DIR/04-profile-main_query-results.csv"
+
+echo "[4] WP CLI Profile stage main_query completed."
+
+# Additional WP CLI Profile commands with output to CSV in the wp-benchmarks directory
+{
+    echo "Test: wp profile stage template"
+    wp profile stage template --fields=hook,time,cache_ratio --spotlight --orderby=time --allow-root --format=csv --url="$PROFILING_URL"
+} > "$RUN_DIR/05-profile-template-results.csv"
+
+# Append a comment with the date and a custom message to the CSV file
+{
+    echo "Test Name: $TEST_LABEL"
+    echo "Notes:"
+    echo "This data was captured on $(date)"
+    echo "Profiled URL: $PROFILING_URL"
+    echo "template is where WordPress determines which theme template to render based on the main query, and renders it. You can dive into hooks for each stage with wp profile stage <stage>"
+} >> "$RUN_DIR/05-profile-template-results.csv"
+
+echo "[5] WP CLI Profile stage template completed."
 
 {
-    echo "Running WP CLI Profile hook wp_loaded:after..."
-    wp profile hook wp_loaded:after --orderby=query_time --allow-root --url="$PROFILING_URL"
-} > "$OUTPUT_DIR/profile-hook-wp-loaded-after-results.csv"
-echo "[5] WP CLI Profile hook wp_loaded:after completed."
+    echo "Test: wp cli profile hook init"
+    wp profile hook init --orderby=query_time --allow-root --format=csv --url="$PROFILING_URL"
+} > "$RUN_DIR/06-profile-hook-init-results.csv"
+echo "[6] WP CLI Profile hook init completed."
+
+{
+    echo "Test: wp cli profile hook --all --spotlight"
+    wp profile hook --all --spotlight --allow-root --format=csv --url="$PROFILING_URL"
+} > "$RUN_DIR/07-profile-hook-all-spotlight-results.csv"
+
+# Append a comment with the date, the profiling URL, and a custom message to the CSV file
+{
+    echo "Test Name: $TEST_LABEL"
+    echo "Notes:"
+    echo "This data was captured on $(date)"
+    echo "Profiled URL: $PROFILING_URL"
+    echo "We can check for all hooks in use on a page. If you believe there is a problem with a hook you can run 'grep -ril hook_name_here wp-content/themes'"
+} >> "$RUN_DIR/07-profile-hook-all-spotlight-results.csv"
+
+echo "[7] WP CLI Profile hook all spotlight completed."
 
 # Run WP CLI Doctor Check cron-count and output to CSV in the wp-benchmarks directory
 {
-    echo "Running WP CLI Doctor Check cron-count..."
-    wp doctor check cron-count --allow-root
-} > "$OUTPUT_DIR/doctor-check-cron-count-results.csv"
-echo "[6] WP CLI Doctor Check cron-count completed."
+    echo "Test: wp cli doctor check cron-count"
+    wp doctor check cron-count --allow-root --format=csv
+} > "$RUN_DIR/08-doctor-check-cron-count-results.csv"
+echo "[8] WP CLI Doctor Check cron-count completed."
 
 # Run WP CLI Doctor Check cron-duplicates and output to CSV in the wp-benchmarks directory
 {
-    echo "Running WP CLI Doctor Check cron-duplicates..."
-    wp doctor check cron-duplicates --allow-root
-} > "$OUTPUT_DIR/doctor-check-cron-duplicates-results.csv"
-echo "[7] WP CLI Doctor Check cron-duplicates completed."
+    echo "Test: wp cli doctor check cron-duplicates"
+    wp doctor check cron-duplicates --allow-root --format=csv
+} > "$RUN_DIR/09-doctor-check-cron-duplicates-results.csv"
+echo "[9] WP CLI Doctor Check cron-duplicates completed."
 
 # Run WP CLI Doctor Check running crons and output to CSV in the wp-benchmarks directory
 {
-    echo "Running WP CLI Doctor Check running crons..."
-    wp cron event list --allow-root
-} > "$OUTPUT_DIR/doctor-check-cron-active-results.csv"
-echo "[8] WP CLI Doctor Check cron-active completed."
+    echo "Test: wp cron event list"
+    wp cron event list --format=csv
+} > "$RUN_DIR/10-check-cron-active-results.csv"
+echo "[10] WP CLI Check Active crons completed."
 
 # Run WP CLI Doctor Check active plugin count and output to CSV in the wp-benchmarks directory
 {
-    echo "Running WP CLI Doctor Check active plugins..."
-    wp doctor check plugin-active-count --allow-root
-} > "$OUTPUT_DIR/doctor-check-active-plugins-results.csv"
-echo "[9] WP CLI Doctor Check active plugins count completed."
+    echo "Test: wp doctor check plugin-active-count"
+    wp doctor check plugin-active-count --allow-root --format=csv
+} > "$RUN_DIR/11-doctor-check-active-plugins-results.csv"
+echo "[11] WP CLI Doctor Check active plugins count completed."
 
 # Run WP CLI Doctor Check autoload-options-size and output to CSV in the wp-benchmarks directory
 {
-    echo "Running WP CLI Doctor Check autoload-options-size..."
-    wp doctor check autoload-options-size --allow-root
-} > "$OUTPUT_DIR/doctor-check-autoload-options-size-results.csv"
-echo "[10] WP CLI Doctor Check autoload-options-size completed."
+    echo "Test: wp doctor check autoload-options-size"
+    wp doctor check autoload-options-size --allow-root --format=csv
+} > "$RUN_DIR/12-doctor-check-autoload-options-size-results.csv"
+echo "[12] WP CLI Doctor Check autoload-options-size completed."
 
 # Run WP DB query and output largest autoloaded rows to CSV in the wp-benchmarks directory
 {
     echo "Running WP DB Query for Largest Autoloaded Data Rows..."
     wp db query "SELECT 'autoloaded data in KiB' as name, ROUND(SUM(LENGTH(option_value))/ 1024) as value FROM $(wp db prefix --allow-root)options WHERE autoload='yes' UNION SELECT 'autoloaded data count', count(*) FROM $(wp db prefix --allow-root)options WHERE autoload='yes' UNION (SELECT option_name, length(option_value) FROM $(wp db prefix --allow-root)options WHERE autoload='yes' ORDER BY length(option_value) DESC LIMIT 10)"
-} > "$OUTPUT_DIR/db-query-autoloaded-data-results.csv"
-echo "[11] WP DB Query for Largest Autoloaded Data Rows completed."
+} > "$RUN_DIR/13-db-query-autoloaded-data-results.csv"
+echo "[13] WP DB Query for Largest Autoloaded Data Rows completed."
 
 # Run WP CLI Doctor Check --all and output to CSV in the wp-benchmarks directory
 echo "Running WP CLI Doctor Check Warning and Errors."
-timeout 180 wp doctor check --all --spotlight --allow-root > "$OUTPUT_DIR/doctor-check-all-results.csv"
+timeout 180 wp doctor check --all --spotlight --allow-root --format=csv > "$RUN_DIR/14-doctor-check-all-results.csv"
 if [ $? -eq 0 ]; then
-    echo "[12] WP CLI Doctor Check --all completed."
+    echo "[14] WP CLI Doctor Check --all completed."
 else
     echo "WP CLI Doctor Check --all command failed or timed out."
     exit 1
@@ -179,4 +256,4 @@ exit 0
 # Disabling the trap before the final echo
 trap - EXIT
 
-echo "====== All tasks completed. Check the $OUTPUT_DIR directory for results. ======"
+echo "====== All tasks completed. Check the $RUN_DIR directory for results. ======"

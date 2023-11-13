@@ -1,54 +1,50 @@
-I've reviewed your existing README.md for the WP CLI Benchmarking Script. Now, I'll update it to include all the tests added in your script and provide guidance on interpreting the results, particularly focusing on the `wp profile` command and its output.
+# WP CLI Benchmarking Script with WebPageTest.org Integration
 
----
-
-# WP CLI Benchmarking Script
-
-This repository contains a Bash script designed for running various benchmarks and profiling tools on WordPress installations using WP CLI.
+This repository contains a Bash script designed for running various benchmarks and profiling tools on WordPress installations using WP CLI and integrating WebPageTest.org for website performance testing.
 
 ## Description
 
-The script automates the following tasks:
+The script automates tasks including:
 
-- Running the Code Profiler Pro.
-- Executing various WP CLI Profile commands, including stage, stage bootstrap, hook init, hook wp_loaded:after, cron-count, cron-duplicates, running crons, active plugin count, and autoload-options-size.
-- Performing WP CLI Doctor checks, including general checks and specific counts.
-- Running custom WP DB queries to analyze autoloaded data in WordPress options.
-- Outputs are organized in the `wp-benchmarks` directory for easy access and review.
+- Code Profiler Pro execution.
+- WP CLI Profile commands (stage, bootstrap, hook init, etc.).
+- WP CLI Doctor checks.
+- Custom WP DB queries for analyzing autoloaded data.
+- Initiating tests on WebPageTest.org and retrieving results.
+
+Outputs are organized in `wp-benchmarks` directory.
 
 ## Installation
 
-To use this script:
-
-1. Clone the repository to your local machine.
-2. Make sure you have WP CLI installed.
-3. Navigate to the root directory of your WordPress installation.
-4. Run the script using `./wp-benchmark.sh`.
+1. Clone the repository.
+2. Ensure WP CLI is installed.
+3. Navigate to WordPress root directory.
+4. Run `./wp-benchmark.sh`.
 
 ## Usage
 
-Execute the script within the root directory of your WordPress installation. The script will automatically install necessary WP CLI packages if they are not already installed and create a directory named `wp-benchmarks` where all output files will be saved.
+Execute within the WordPress root directory. The script installs necessary WP CLI packages and creates `wp-benchmarks` for outputs.
 
 ```bash
 chmod +x wp-benchmark.sh
 ./wp-benchmark.sh
 ```
 
-## General Information
+## WebPageTest.org Integration
 
-`wp profile` monitors key performance indicators of the WordPress execution process, helping quickly identify points of slowness. Save hours diagnosing slow WordPress sites. It complements Xdebug and New Relic by pointing you in the right direction for further debugging. It makes tasks like profiling a WP REST API response easy.
+To use WebPageTest.org:
 
-When WordPress handles a request, it executes as one long PHP script. `wp profile stage` breaks this script into stages:
+1. Set `WPT_API_KEY` or enter it when prompted.
+2. The script sends requests to WebPageTest.org and monitors test progress.
+3. On completion, it provides a URL to detailed performance results.
 
-- `bootstrap`: WordPress sets itself up, loads plugins/themes, and fires the `init` hook.
-- `main_query`: WordPress transforms the request into the primary WP_Query.
-- `template`: WordPress determines and renders the theme template based on the main query.
+## Interpreting Profiling Results
 
-You'll receive a thorough table focusing mainly on the `time` column. Ideally, you want a high `cache_ratio` (greater than 70%), more `cache_hits` than `cache_misses`, and low `query_time`.
-
-Use `grep` to look for problematic callbacks:
+- `wp profile` breaks down the WordPress execution process into stages for detailed analysis.
+- Look for high `cache_ratio`, more `cache_hits` than `cache_misses`, and low `query_time`.
+- Use `grep` for investigating specific hooks.
 ```bash
 grep -rHin "hook_name_here" wp-content/themes
 ```
 
-This script is designed to provide a comprehensive overview of your WordPress site's performance, enabling you to make informed decisions on optimizations and improvements.
+This script offers a comprehensive view of WordPress site performance, helping inform optimization strategies.

@@ -11,7 +11,7 @@ echo "|                                      |"
 echo "| Script By: Danny Albeck              |"
 echo "| dalbeck@albeckconsulting.com         |"
 echo "|                                      |"
-echo "| V1.1                                 |"
+echo "| V1.2                                 |"
 echo "========================================"
 
 # Prompt for the profiling URL
@@ -20,11 +20,94 @@ read -p "What URL do you want to profile? " PROFILING_URL
 # Prompt for test label/description
 read -p "Enter a label or description for this test set (e.g., Page Name, New code added, etc.): " TEST_LABEL
 
+# New prompt for initiating WebPageTest.org test
+read -p "Would you like to initiate a WebPageTest.org test? (yes/no) " WPT_TEST
+
+if [ "$WPT_TEST" = "yes" ]; then
+
+    WPT_API_KEY="e306a8d4-a2ab-42e4-9292-fe03ed7f27fc"
+
+    # Check if WPT_API_KEY is already set
+    if [ -z "$WPT_API_KEY" ]; then
+        # Prompt for WebPageTest API Key if not set
+        read -p "Enter your WebPageTest API key: " WPT_API_KEY
+    fi
+
+    # Building the WebPageTest API URL
+    WPT_API_URL="https://www.webpagetest.org/runtest.php?url=$PROFILING_URL&k=$WPT_API_KEY&label=$TEST_LABEL&runs=9&video=1&timeline=1&lighthouse=1&f=json"
+
+    # Sending the request and capturing the response
+    WPT_RESPONSE=$(curl -s "$WPT_API_URL")
+
+    # Extract the Test ID from the initial response
+    TEST_ID=$(echo $WPT_RESPONSE | grep -o '"testId":"[^"]*' | awk -F\" '{print $4}')
+
+    # Initialize the flag
+    firstTime100=true
+
+    # Check test status in a loop
+    while true; do
+        STATUS_RESPONSE=$(curl -s "https://www.webpagetest.org/testStatus.php?test=$TEST_ID")
+        STATUS=$(echo $STATUS_RESPONSE | grep -o '"statusCode":[0-9]*' | head -1 | cut -d: -f2 | tr -d '[:space:]')
+
+        if [[ $STATUS -eq 100 ]]; then
+            if [[ $firstTime100 == true ]]; then
+                echo "[>] Test has started..."
+                firstTime100=false
+            else
+                echo "[>] Test is in progress..."
+            fi
+        elif [[ $STATUS -eq 101 ]]; then
+            echo "[>] Test is in the queue..."
+        elif [[ $STATUS -eq 102 ]]; then
+            echo "[>] Test server is currently unreachable..."
+        elif [[ $STATUS -eq 200 ]]; then
+            # Extract additional details
+            LABEL=$(echo $STATUS_RESPONSE | grep -o '"label":"[^"]*' | awk -F\" '{print $4}')
+            RUNS=$(echo $STATUS_RESPONSE | grep -o '"runs":[0-9]*' | head -1 | awk -F: '{print $2}')
+            LOCATION=$(echo $STATUS_RESPONSE | grep -o '"testInfo":{[^}]*"location":"[^"]*' | sed 's/.*"location":"\([^"]*\).*/\1/')
+            CONNECTIVITY=$(echo $STATUS_RESPONSE | grep -o '"connectivity":"[^"]*' | awk -F\" '{print $4}')
+
+            # Fetch and display results URL
+            RESULTS_RESPONSE=$(curl -s "https://www.webpagetest.org/jsonResult.php?test=$TEST_ID")
+            RESULTS_URL=$(echo $RESULTS_RESPONSE | grep -o '"summary":"[^"]*' | awk -F\" '{print $4}' | sed 's/\\//g')
+
+            echo " "
+            echo "========================================================================="
+            echo "                                                                         "
+            echo "     WebPageTest.org | Test Complete                                     "
+            echo "                                                                         "
+            echo " Test Name: $LABEL                                                       "
+            echo " Number of runs: $RUNS                                                   "
+            echo " Test Geo Location: $LOCATION                                            "
+            echo " Test Connection Speed: $CONNECTIVITY                                    "
+            echo " Test URL: $RESULTS_URL                                                  "
+            echo "                                                                         "
+            echo "========================================================================="
+            echo "                                                                         "
+
+            break
+        else
+            echo "Error: Test status code $STATUS"
+            break
+        fi
+
+        sleep 12 # Wait for 12 seconds before checking again
+    done
+
+else
+    echo "Skipping WebPageTest.org test."
+fi
+
 # Introductory line
-echo "=============================== Notice =================================="
-echo "|     Larger scripts could take longer, or exhaust timeouts/memory.      |"
-echo "|     --      Profiling Scripts Starting Now       --                    |"
-echo "=============================== End Notice ============================="
+echo "========================================================================="
+echo "                                                                         "
+echo "                              Notice                                     "
+echo "     Larger scripts could take longer, or exhaust timeouts/memory.       "
+echo "          --      Profiling Scripts Starting Now       --                "
+echo "                                                                         "
+echo "========================================================================="
+echo " "
 
 # Generate a timestamp for the current run
 CURRENT_TIMESTAMP=$(date +"%Y-%m-%d-%H%M")

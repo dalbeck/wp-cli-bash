@@ -59,8 +59,7 @@ if [ "$SECURITY_SCAN" = "yes" ]; then
     fi
 
     # Run the security scan
-    wp vuln status --allow-root --reference --format=csv > "$RUN_DIR/15-security-results.csv" 2>> "$RUN_DIR/error.txt"
-    # (Add the command to perform the security scan here)
+    wp vuln status --allow-root --reference --format=csv > "$RUN_DIR/14-security-results.csv" 2>> "$RUN_DIR/error.txt"
 fi
 
 # Prompt for the profiling URL
@@ -80,7 +79,7 @@ if [ "$WPT_TEST" = "yes" ]; then
     fi
 
     # Building the WebPageTest API URL
-    WPT_API_URL="https://www.webpagetest.org/runtest.php?url=$PROFILING_URL&k=$WPT_API_KEY&label=$TEST_LABEL&runs=9&video=1&timeline=1&lighthouse=1&timeline=1&f=json"
+    WPT_API_URL="https://www.webpagetest.org/runtest.php?url=$PROFILING_URL&k=$WPT_API_KEY&label=$TEST_LABEL&runs=9&video=1&tcpdump=1&timeline=1&htmlbody=1&lighthouse=1&timeline=1&f=json"
 
     # Sending the request and capturing the response
     WPT_RESPONSE=$(curl -s "$WPT_API_URL")
@@ -383,7 +382,7 @@ if [ "$DB_CHECKS" = "yes" ]; then
     {
         echo "Running WP DB Query for Largest Autoloaded Data Rows..."
         wp db query "SELECT 'autoloaded data in KiB' as name, ROUND(SUM(LENGTH(option_value))/ 1024) as value FROM $(wp db prefix --allow-root)options WHERE autoload='yes' UNION SELECT 'autoloaded data count', count(*) FROM $(wp db prefix --allow-root)options WHERE autoload='yes' UNION (SELECT option_name, length(option_value) FROM $(wp db prefix --allow-root)options WHERE autoload='yes' ORDER BY length(option_value) DESC LIMIT 10)"
-    } > "$RUN_DIR/13-db-query-autoloaded-data-results.csv"
+    } > "$RUN_DIR/12-db-query-autoloaded-data-results.csv"
     echo "[12] WP DB Query for Largest Autoloaded Data Rows completed."
     # Run WP DB query to check for orphaned postmeta entries
     {

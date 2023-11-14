@@ -1,4 +1,4 @@
-# WP CLI Benchmarking Script with WebPageTest.org and WPScan Integration
+# WP CLI Benchmarking Script with WebPageTest.org and Security Vulnerability Scan Integration
 
 ## Description
 

@@ -59,7 +59,7 @@ if [ "$SECURITY_SCAN" = "yes" ]; then
     fi
 
     # Run the security scan
-    wp vuln status --allow-root --reference --format=csv > "$RUN_DIR/15-wpscan-results.csv" 2>> "$RUN_DIR/error.txt"
+    wp vuln status --allow-root --reference --format=csv > "$RUN_DIR/15-security-results.csv" 2>> "$RUN_DIR/error.txt"
     # (Add the command to perform the security scan here)
 fi
 

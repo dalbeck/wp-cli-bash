@@ -10,7 +10,7 @@ echo "                                                                         "
 echo " Script By: Danny Albeck                                                 "
 echo " dalbeck@albeckconsulting.com                                            "
 echo "                                                                         "
-echo " V1.4                                                                    "
+echo " V1.4.1                                                                  "
 echo "                                                                         "
 echo "========================================================================="
 

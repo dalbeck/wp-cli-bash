@@ -1,42 +1,49 @@
-# WP CLI Benchmarking Script with WebPageTest.org Integration
-
-This repository contains a Bash script designed for running various benchmarks and profiling tools on WordPress installations using WP CLI and integrating WebPageTest.org for website performance testing.
+# WP CLI Benchmarking Script with WebPageTest.org and WPScan Integration
 
 ## Description
 
-The script automates tasks including:
+This Bash script is designed for comprehensive performance and security analysis of WordPress installations. It integrates WebPageTest.org for frontend testing and WPScan for security assessments.
 
-- Code Profiler Pro execution.
-- WP CLI Profile commands (stage, bootstrap, hook init, etc.).
-- WP CLI Doctor checks.
-- Custom WP DB queries for analyzing autoloaded data.
-- Initiating tests on WebPageTest.org and retrieving results.
+### Automated Tasks
 
-Outputs are organized in `wp-benchmarks` directory.
+- **Code Profiler Pro Execution**: Analyzes code performance.
+- **WP CLI Profile Commands**: Detailed profiling of WordPress stages.
+- **WP CLI Doctor Checks**: Health checks and diagnostics.
+- **Custom WP DB Queries**: Analysis of autoloaded data.
+- **WebPageTest.org Tests**: Frontend performance analysis.
+- **WPScan Security Scan**: Vulnerability scanning using WPScan.
+
+### Outputs
+
+Results are stored in the `wp-benchmarks` directory.
 
 ## Installation
 
 1. Clone the repository.
-2. Ensure WP CLI is installed.
-3. Navigate to WordPress root directory.
-4. Run `./wp-benchmark.sh`.
+2. Verify WP CLI installation.
+3. Navigate to the WordPress root.
 
 ## Usage
 
-Execute within the WordPress root directory. The script installs necessary WP CLI packages and creates `wp-benchmarks` for outputs.
+Run `./wp-benchmark.sh` in the WordPress root directory. The script handles necessary installations and outputs.
 
 ```bash
 chmod +x wp-benchmark.sh
 ./wp-benchmark.sh
 ```
 
-## WebPageTest.org Integration
+### WebPageTest.org Integration
 
-To use WebPageTest.org:
+Set `WPT_API_KEY` or provide it when prompted. Monitors test progress and provides detailed performance results.
 
-1. Set `WPT_API_KEY` or enter it when prompted.
-2. The script sends requests to WebPageTest.org and monitors test progress.
-3. On completion, it provides a URL to detailed performance results.
+### WPScan Security Integration
+
+Offers the option to run a WPScan security scan, identifying vulnerabilities. Requires a WPScan API token.
+
+## Profiling and Security Analysis
+
+- **Performance Profiling**: `wp profile` command breaks down execution stages. Focus on metrics like `cache_ratio`, `cache_hits`, and `query_time`.
+- **Security Scanning**: WPScan provides detailed vulnerability reports.
 
 ## Interpreting Profiling Results
 
@@ -47,4 +54,6 @@ To use WebPageTest.org:
 grep -rHin "hook_name_here" wp-content/themes
 ```
 
-This script offers a comprehensive view of WordPress site performance, helping inform optimization strategies.
+---
+
+This script provides a holistic approach to WordPress performance and security analysis, streamlining the process of identifying optimization opportunities.

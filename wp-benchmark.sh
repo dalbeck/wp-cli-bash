@@ -324,13 +324,16 @@ echo "[12] WP CLI Doctor Check autoload-options-size completed."
 echo "[13] WP DB Query for Largest Autoloaded Data Rows completed."
 
 # Run WP CLI Doctor Check --all and output to CSV in the wp-benchmarks directory
-echo "Running WP CLI Doctor Check Warning and Errors."
-timeout 180 wp doctor check --all --spotlight --allow-root --format=csv > "$RUN_DIR/14-doctor-check-all-results.csv"
+echo "[14] Running WP CLI Doctor Check Warning and Errors. Note: This can take up to 20 minutes for larger sites."
+{
+    timeout 1200 wp doctor check --all --spotlight --allow-root --format=csv # Timeout increased to 20 minutes (1200 seconds)
+} > "$RUN_DIR/14-doctor-check-all-results.csv"
+
 if [ $? -eq 0 ]; then
     echo "[14] WP CLI Doctor Check --all completed."
 else
-    echo "WP CLI Doctor Check --all command failed or timed out."
-    exit 1
+    echo "WP CLI Doctor Check --all command failed or timed out. Check $RUN_DIR/error.txt for details."
+    echo "WP CLI Doctor Check --all command failed or timed out." >> "$RUN_DIR/error.txt"
 fi
 
 # Force stop the script

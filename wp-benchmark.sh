@@ -1,24 +1,64 @@
 #!/bin/bash
 
-echo "========================================"
-echo "|                                      |"
-echo "| Welcome to the automated WordPress   |"
-echo "| benchmarking assistant. First, we    |"
-echo "| will set the URL to profile against, |"
-echo "| for tests that can check against a   |"
-echo "| specific URL.                        |"
-echo "|                                      |"
-echo "| Script By: Danny Albeck              |"
-echo "| dalbeck@albeckconsulting.com         |"
-echo "|                                      |"
-echo "| V1.2                                 |"
-echo "========================================"
-
-# Prompt for the profiling URL
-read -p "What URL do you want to profile? " PROFILING_URL
+echo "========================================================================="
+echo "                                                                         "
+echo " Welcome to the automated WordPress benchmarking assistant.              "
+echo " First, create a label for your test. Then we will set the URL to test.  "
+echo " You can profile that URL or run a front-end test with WebPageTest.org.  "
+echo " Additionally, you can run a security scan with WPScan.                  "
+echo "                                                                         "
+echo " Script By: Danny Albeck                                                 "
+echo " dalbeck@albeckconsulting.com                                            "
+echo "                                                                         "
+echo " V1.3                                                                    "
+echo "                                                                         "
+echo "========================================================================="
 
 # Prompt for test label/description
 read -p "Enter a label or description for this test set (e.g., Page Name, New code added, etc.): " TEST_LABEL
+
+# Generate a timestamp for the current run
+CURRENT_TIMESTAMP=$(date +"%Y-%m-%d-%H%M")
+
+# Define output directory
+OUTPUT_DIR="wp-benchmarks"
+
+# Replacing spaces in TEST_LABEL with underscores for directory naming
+SAFE_TEST_LABEL=$(echo "$TEST_LABEL" | tr ' ' '_')
+# Define the subdirectory using the timestamp
+RUN_DIR="$OUTPUT_DIR/$CURRENT_TIMESTAMP-$SAFE_TEST_LABEL"
+
+# Create the directory if it does not exist
+if [ ! -d "$RUN_DIR" ]; then
+    mkdir -p "$RUN_DIR"
+fi
+
+read -p "Would you like to run a security scan with WPScan? (yes/no) " SECURITY_SCAN
+
+if [ "$SECURITY_SCAN" = "yes" ]; then
+    if ! wp package list | grep -q "wp-vulnerability-scanner"; then
+        echo "Installing WP-CLI vulnerability scanner..."
+        wp package install git@github.com:10up/wp-vulnerability-scanner.git
+    fi
+
+    VULN_API_TOKEN="Pph7ab75bwZy8MtQTAwpZhLTR2RMaBs0VVa8aZ8QeXw"
+
+    if [ -z "$VULN_API_TOKEN" ]; then
+        read -p "Enter your WPScan API token: " VULN_API_TOKEN
+    fi
+
+    # Set the API token
+    if ! grep -q "VULN_API_TOKEN" wp-config.php; then
+        wp config set VULN_API_TOKEN $VULN_API_TOKEN --allow-root
+    fi
+
+    # Run the security scan
+    wp vuln status --allow-root --reference --format=csv > "$RUN_DIR/15-wpscan-results.csv" 2>> "$RUN_DIR/error.txt"
+    # (Add the command to perform the security scan here)
+fi
+
+# Prompt for the profiling URL
+read -p "What URL do you want to profile? " PROFILING_URL
 
 # New prompt for initiating WebPageTest.org test
 read -p "Would you like to initiate a WebPageTest.org test? (yes/no) " WPT_TEST
@@ -108,22 +148,6 @@ echo "          --      Profiling Scripts Starting Now       --                "
 echo "                                                                         "
 echo "========================================================================="
 echo " "
-
-# Generate a timestamp for the current run
-CURRENT_TIMESTAMP=$(date +"%Y-%m-%d-%H%M")
-
-# Define output directory
-OUTPUT_DIR="wp-benchmarks"
-
-# Replacing spaces in TEST_LABEL with underscores for directory naming
-SAFE_TEST_LABEL=$(echo "$TEST_LABEL" | tr ' ' '_')
-# Define the subdirectory using the timestamp
-RUN_DIR="$OUTPUT_DIR/$CURRENT_TIMESTAMP-$SAFE_TEST_LABEL"
-
-# Create the directory if it does not exist
-if [ ! -d "$RUN_DIR" ]; then
-    mkdir -p "$RUN_DIR"
-fi
 
 # Define the URL of the Code Profiler Pro plugin zip file
 PLUGIN_URL="https://code-profiler.com/pro/?action=d&l=335ED-56FA7-941EC-65BDD-4E61B-95ECB"
@@ -326,7 +350,7 @@ echo "[13] WP DB Query for Largest Autoloaded Data Rows completed."
 # Run WP CLI Doctor Check --all and output to CSV in the wp-benchmarks directory
 echo "[14] Running WP CLI Doctor Check Warning and Errors. Note: This can take up to 20 minutes for larger sites."
 {
-    timeout 1200 wp doctor check --all --spotlight --allow-root --format=csv # Timeout increased to 20 minutes (1200 seconds)
+    timeout 1800 wp doctor check --all --spotlight --allow-root --format=csv # Timeout increased to 30 minutes (1800 seconds)
 } > "$RUN_DIR/14-doctor-check-all-results.csv"
 
 if [ $? -eq 0 ]; then

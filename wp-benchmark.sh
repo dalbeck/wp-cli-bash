@@ -80,7 +80,7 @@ if [ "$WPT_TEST" = "yes" ]; then
     fi
 
     # Building the WebPageTest API URL
-    WPT_API_URL="https://www.webpagetest.org/runtest.php?url=$PROFILING_URL&k=$WPT_API_KEY&label=$TEST_LABEL&runs=9&video=1&timeline=1&lighthouse=1&f=json"
+    WPT_API_URL="https://www.webpagetest.org/runtest.php?url=$PROFILING_URL&k=$WPT_API_KEY&label=$TEST_LABEL&runs=9&video=1&timeline=1&lighthouse=1&timeline=1&f=json"
 
     # Sending the request and capturing the response
     WPT_RESPONSE=$(curl -s "$WPT_API_URL")

@@ -9,9 +9,10 @@ This Bash script is designed for comprehensive performance and security analysis
 - **Code Profiler Pro Execution**: Analyzes code performance.
 - **WP CLI Profile Commands**: Detailed profiling of WordPress stages.
 - **WP CLI Doctor Checks**: Health checks and diagnostics.
+- **WP CLI DB Checks**: Analyze auto load data and orphaned postmeta.
 - **Custom WP DB Queries**: Analysis of autoloaded data.
 - **WebPageTest.org Tests**: Frontend performance analysis.
-- **WPScan Security Scan**: Vulnerability scanning using WPScan.
+- **Wordfence Security Scan**: Vulnerability scanning using Wordfence.
 
 ### Outputs
 
@@ -36,14 +37,14 @@ chmod +x wp-benchmark.sh
 
 Set `WPT_API_KEY` or provide it when prompted. Monitors test progress and provides detailed performance results.
 
-### WPScan Security Integration
+### Wordfence Security Integration
 
-Offers the option to run a WPScan security scan, identifying vulnerabilities. Requires a WPScan API token.
+Offers the option to run a Wordfence security scan, identifying vulnerabilities and providing detailed reports.
 
 ## Profiling and Security Analysis
 
 - **Performance Profiling**: `wp profile` command breaks down execution stages. Focus on metrics like `cache_ratio`, `cache_hits`, and `query_time`.
-- **Security Scanning**: WPScan provides detailed vulnerability reports.
+- **Security Scanning**: Wordfence provides detailed vulnerability reports.
 
 ## Interpreting Profiling Results
 

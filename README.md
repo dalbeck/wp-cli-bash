@@ -2,7 +2,7 @@
 
 ## Description
 
-This Bash script is designed for comprehensive performance and security analysis of WordPress installations. It integrates WebPageTest.org for frontend testing and WPScan for security assessments.
+This Bash script is designed for comprehensive performance and security analysis of WordPress installations. It integrates WebPageTest.org for frontend testing, Wordfence for security assessments, and MySQL Tuner for database performance analysis.
 
 ### Automated Tasks
 
@@ -13,6 +13,7 @@ This Bash script is designed for comprehensive performance and security analysis
 - **Custom WP DB Queries**: Analysis of autoloaded data.
 - **WebPageTest.org Tests**: Frontend performance analysis.
 - **Wordfence Security Scan**: Vulnerability scanning using Wordfence.
+- **MySQLTuner**: MySQL performance analysis.
 
 ### Outputs
 
@@ -40,6 +41,9 @@ Set `WPT_API_KEY` or provide it when prompted. Monitors test progress and provid
 ### Wordfence Security Integration
 
 Offers the option to run a Wordfence security scan, identifying vulnerabilities and providing detailed reports.
+
+### MySQL Tuner Integration
+Have your MySQL Database username and password ready. The script will prompt you for them and generate a `.my.cnf` file for authenticating and scanning the database.
 
 ## Profiling and Security Analysis
 

@@ -10,7 +10,7 @@ echo "                                                                         "
 echo " Script By: Danny Albeck                                                 "
 echo " dalbeck@albeckconsulting.com                                            "
 echo "                                                                         "
-echo " V1.4.1                                                                  "
+echo " V1.5.0                                                                  "
 echo "                                                                         "
 echo "========================================================================="
 
@@ -149,6 +149,8 @@ read -p "Would you like to perform doctor checks on WordPress? (yes/no) " DOCTOR
 read -p "Would you like to run Database Checks? (yes/no) " DB_CHECKS
 
 read -p "Would you like to run Profiling Checks? (yes/no) " PROFILING_CHECKS
+
+read -p "Would you like to check MySQL optimizations? (yes/no) " MYSQL_CHECK
 
 if [ "$PROFILING_CHECKS" = "yes" ]; then
     # Introductory line
@@ -391,6 +393,57 @@ if [ "$DB_CHECKS" = "yes" ]; then
         echo "Orphaned postmeta entries: $QUERY_RESULT"
     } > "$RUN_DIR/13-db-query-orphaned-postmeta-results.csv"
     echo "[13] WP DB Query for Orphaned Postmeta Entries completed."
+fi
+
+if [ "$MYSQL_CHECK" = "yes" ]; then
+
+    # Define MySQL Tuner directory as the current directory
+    MYSQL_TUNER_DIR="$(pwd)/mysqltuner"
+
+    # Define the path for the MySQL Tuner script
+    MYSQL_TUNER_PATH="$MYSQL_TUNER_DIR/mysqltuner.pl"
+
+    # Prompt for MySQL credentials
+    read -p "Enter MySQL username: " MYSQL_USER
+    read -sp "Enter MySQL password: " MYSQL_PASS
+    echo
+
+    # Define path for .my.cnf file
+    MY_CNF_PATH="$HOME/.my.cnf"
+
+    # Create or update .my.cnf file with credentials
+    {
+        echo "[client]"
+        echo "user=$MYSQL_USER"
+        echo "password=$MYSQL_PASS"
+    } > "$MY_CNF_PATH"
+
+    # Set file permissions to ensure only the user can read it
+    chmod 600 "$MY_CNF_PATH"
+
+    # Create the MySQL Tuner directory if it does not exist
+    if [ ! -d "$MYSQL_TUNER_DIR" ]; then
+        mkdir -p "$MYSQL_TUNER_DIR"
+    fi
+
+    if [ ! -f "$MYSQL_TUNER_PATH" ]; then
+        echo "Downloading MySQL Tuner..."
+
+        # Download MySQL Tuner
+        wget http://mysqltuner.pl/ -O "$MYSQL_TUNER_PATH"
+
+        # Make the script executable
+        chmod +x "$MYSQL_TUNER_PATH"
+    else
+        echo "MySQL Tuner is already installed."
+    fi
+
+    # Define the output file path for MySQL Tuner results in the current run directory
+    MYSQL_TUNER_OUTPUT="$RUN_DIR/15-mysql-tuner-results.txt"
+
+    # Run MySQL Tuner and save the output to the specified file
+    perl "$MYSQL_TUNER_PATH" --outputfile "$MYSQL_TUNER_OUTPUT" --buffers --dbstat --idxstat --sysstat --pfstat --tbstat 2>> "$RUN_DIR/error.txt"
+    echo "MySQL Tuner output saved to $MYSQL_TUNER_OUTPUT."
 fi
 
 # Force stop the script

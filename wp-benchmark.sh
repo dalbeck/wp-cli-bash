@@ -10,7 +10,7 @@ echo "                                                                         "
 echo " Script By: Danny Albeck                                                 "
 echo " dalbeck@albeckconsulting.com                                            "
 echo "                                                                         "
-echo " V1.5.0                                                                  "
+echo " V1.5.1                                                                  "
 echo "                                                                         "
 echo "========================================================================="
 
@@ -33,33 +33,41 @@ if [ ! -d "$RUN_DIR" ]; then
     mkdir -p "$RUN_DIR"
 fi
 
+# Prompt for running a security scan with Wordfence
 read -p "Would you like to run a security scan with Wordfence? (yes/no) " SECURITY_SCAN
 
 if [ "$SECURITY_SCAN" = "yes" ]; then
-    if ! wp package list | grep -q "wp-vulnerability-scanner"; then
-        echo "Installing WP-CLI vulnerability scanner..."
-        wp package install git@github.com:10up/wp-vulnerability-scanner.git
+    # Check for Bedrock setup
+    if [ -d "web/app" ] && [ -f "config/application.php" ]; then
+        # Detected a Bedrock installation
+        if grep -q "VULN_API_PROVIDER" "config/application.php"; then
+            echo "VULN_API_PROVIDER definition found in config/application.php."
+            # Proceed with security scan
+            if ! wp package list | grep -q "wp-vulnerability-scanner"; then
+                echo "Installing WP-CLI vulnerability scanner..."
+                wp package install git@github.com:10up/wp-vulnerability-scanner.git
+            fi
+            wp vuln status --allow-root --reference --format=csv > "$RUN_DIR/14-security-results.csv" 2>> "$RUN_DIR/error.txt"
+            echo -e "\e[1;32mSuccess:\e[0m \e[1mYour security scan has completed.\e[0m"
+        else
+            echo -e "We have detected this is not a traditional WordPress installation. Please manually add the following to your config/application.php file: \e[1;32mdefine( 'VULN_API_PROVIDER', 'wordfence' );\e[0m"
+            echo "Once added, you can run the security scan manually."
+        fi
+    else
+        # Traditional WordPress setup
+        if ! wp package list | grep -q "wp-vulnerability-scanner"; then
+            echo "Installing WP-CLI vulnerability scanner..."
+            wp package install git@github.com:10up/wp-vulnerability-scanner.git
+        fi
+
+        #VULN_API_PROVIDER="wordfence"
+        # Set the Security Provider
+        # wp config set VULN_API_PROVIDER $VULN_API_PROVIDER
+
+        # Run the security scan
+        wp vuln status --allow-root --reference --format=csv > "$RUN_DIR/14-security-results.csv" 2>> "$RUN_DIR/error.txt"
+        echo -e "\e[1;32mSuccess:\e[0m \e[1mYour security scan has completed.\e[0m"
     fi
-
-    #VULN_API_TOKEN=""
-    VULN_API_PROVIDER="wordfence"
-
-    # if [ -z "$VULN_API_TOKEN" ]; then
-    #     read -p "Enter your WPScan API token: " VULN_API_TOKEN
-    # fi
-
-    # Set the API token
-    # if ! grep -q "VULN_API_TOKEN" wp-config.php; then
-    #     wp config set VULN_API_TOKEN $VULN_API_TOKEN
-    # fi
-
-    # Set the Security Provider
-    if ! grep -q "VULN_API_PROVIDER" wp-config.php; then
-        wp config set VULN_API_PROVIDER $VULN_API_PROVIDER
-    fi
-
-    # Run the security scan
-    wp vuln status --allow-root --reference --format=csv > "$RUN_DIR/14-security-results.csv" 2>> "$RUN_DIR/error.txt"
 fi
 
 # Prompt for the profiling URL

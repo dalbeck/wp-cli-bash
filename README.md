@@ -27,7 +27,7 @@ Results are stored in the `wp-benchmarks` directory.
 
 ## Usage
 
-Run `./wp-benchmark.sh` in the WordPress root directory. The script handles necessary installations and outputs.
+Run `./wp-benchmark.sh` in the WordPress root directory. The script handles necessary installations and outputs. Support added for Roots.io Bedrock file structure.
 
 ```bash
 chmod +x wp-benchmark.sh
